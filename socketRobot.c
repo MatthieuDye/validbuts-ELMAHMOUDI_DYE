@@ -71,7 +71,7 @@ int main(void) {
       strcat(buffer,"/");
       strcat(buffer,coulRobot);
 	    strcat(buffer,"/");
-      send(csock, buffer,50 , 0);
+      send(csock, buffer, 50 , 0);
 	    printf("Envoi de %s\n", buffer);
 
     

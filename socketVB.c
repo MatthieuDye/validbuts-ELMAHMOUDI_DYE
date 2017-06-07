@@ -1,3 +1,4 @@
+
 // tcp_client.c
 
 #include <unistd.h> /* read, write, close */
@@ -46,17 +47,18 @@ Joueur listeJoueurs[NBRE_ROBOTS];
           */
 //utiliser typedef ?
 
+
 void recupJoueurs() { // à faire en fction de beebotte
   char buffer[254]="";
   strcat(buffer,"curl \"http://api.beebotte.com/v1/public/data/read/vberry/testVB/msg\" | tee curly.txt" );
   system(buffer);
 
 
-
+/*
   Joueur j1;
-  j1.rfidetud, "21302029" ); //à changer : c'est la mienne
+  strcpy(j1.rfidetud, "21302029" ); //à changer : c'est la mienne
   strcpy(j1.idRobot, "162.38.111.103" );
-  strcpy(j1.coulRobot, "bleu" );
+  strcpy(j1.coulRobot, "rouge" );
   listeJoueurs[0] = j1;
 
   Joueur j2;
@@ -70,34 +72,51 @@ void recupJoueurs() { // à faire en fction de beebotte
   strcpy(j3.idRobot, "162.38.111.120" );
   strcpy(j3.coulRobot, "rouge" );
   listeJoueurs[2] = j3;
-
+  */
 };
 
 // fct nbre de joueurs
 
 int addNumJoueur(char* numetu) {
-	int range = 0;
-	if (choixJoueur(numetu) == -1) {
-		int i = 0;
-		while ( (i<NBRE_ROBOTS) && (range==0) ) {
-			if (listeJoueurs[i].rfidetud == NULL) {
-				strcpy(listeJoueurs[i].rfidetud,numetu);
-				range = 1;
-			} 
-			else {i++;}
-		}
-	}
-	else {printf("Il y a déjà un étudiant avec ce numéro dans la table");}
-	return range;
+  int range = 0;
+  if (choixJoueur(numetu) == -1) {
+    int i = 0;
+    while ( (i<NBRE_ROBOTS) && (range==0) ) {
+      if (strcmp(listeJoueurs[i].rfidetud,"") == 0) {
+        strcpy(listeJoueurs[i].rfidetud,numetu);
+        printf("Le joueur n° %s a bien été ajouté à l'indice %i.\n", numetu, i );
+        range = 1;
+      } 
+      else {i++;}
+    }
+  }
+  else {printf("Il y a déjà un étudiant avec le numéro %s dans la table\n", numetu);}
+  return range;
 } // retourne 1 si le joueur n'existait pas et vient d'être ajouté. 0 s'il existe déjà.
 
-void addRobotJoueur(numetu, robotetu) {
-	strcpy(listeJoueurs[choixJoueur(numetu)].idRobot,(char*)robotetu);
+void addRobotJoueur(char* numetu,  char*robotetu) {
+  strcat(listeJoueurs[choixJoueur(numetu)].idRobot, robotetu);
+  printf("Le joueur n° %s est bien lié au robot d'ip %s.\n", numetu, robotetu );
 }
 
-void addCouleurRobot(numetu, robotetu) {
-	strcpy(listeJoueurs[choixJoueur(numetu)].coulRobot,(char*)robotetu);
+void addCouleurRobot(char *numetu, char*couletu) {
+  strcat(listeJoueurs[choixJoueur(numetu)].coulRobot, couletu);  
+  printf("Le joueur n° %s a bien la couleur %s.\n", numetu, couletu );
 }
+
+int existenceJoueur(char* rfidcomp) { // a fusionner
+  int trouve = 0;
+  int i = 0;
+
+  while ( (i<NBRE_ROBOTS) && (trouve == 0) ) {
+    if ( strcmp(listeJoueurs[i].rfidetud,rfidcomp) == 0) {
+      trouve = 1;
+    }
+    else {i++;}
+  }
+
+  return trouve; // 1 si le joueur existe, 0 sinon
+};
 
 int choixJoueur(char* rfidcomp) {
   int trouve = 0;
@@ -112,7 +131,7 @@ int choixJoueur(char* rfidcomp) {
     else {i++;}
   }
 
-  return temp; // Reourne l'indice du joueur s'il apparait dans le tableau, -1 sinon.
+  return temp;
 };
 
 void error(const char *msg) { perror(msg); exit(0); }
@@ -269,49 +288,45 @@ void parsage(char *fichier ){
     char *posIP = strstr(rendered, typeIP);
     char *posCLR = strstr(rendered, typeCLR);
     char *posRJ = strstr(rendered, typeRJ);
-    char *typeMess;
-	char *numJoueur;
-	char *donnee;
 
     if ((( posIP != NULL)  && (posRJ != NULL)) || (( posCLR != NULL)  && (posRJ != NULL))) {
-	char* token = strtok(rendered, "="); // on enlève le type du message
-	token = strtok(NULL, ",");
-	typeMess = token;
+    char* token = strtok(rendered, "="); // on enlève le type du message
+      token = strtok(NULL, ",");
+      char *typeMess = token;
 
-	token = strtok(NULL, "=");	
-	token = strtok(NULL, ","); // on enlève le type d'entité
+      token = strtok(NULL, "=");  
+      token = strtok(NULL, ","); // on enlève le type d'entité
 
-	token = strtok(NULL, "=");	
-	token = strtok(NULL, ","); // on obtient le numero étudiant
-	numJoueur = token;
-	int ajout = addNumJoueur(numJoueur);
+      token = strtok(NULL, "=");  
+      token = strtok(NULL, ","); // on obtient le numero étudiant
 
-	token = strtok(NULL, "=");	
-	token = strtok(NULL, ","); // on obtient la dernière data
-	donnee = token;
+      char * numJoueur = token;
+      int ajout = addNumJoueur(numJoueur);
 
-	if (ajout == 1) {
-		if (strcmp(typeMess,typeIP) == 0) {
-			addRobotJoueur(numJoueur,donnee);
-		}
+      token = strtok(NULL, "=");  
+      token = strtok(NULL, "\""); // on obtient la dernière data
+      char *donnee = token;
 
-		else if  (strcmp(typeMess,typeCLR) == 0) {
-			addCouleurRobot(numJoueur,donnee);	
-		}
-	}
-    //printf("%s\n", rendered);
-    }
+      if (ajout == 1) {
+        if (strcmp(typeMess,typeIP) == 0) {
+          addRobotJoueur(numJoueur,donnee);
+        }
+
+        else if  (strcmp(typeMess,typeCLR) == 0) {
+          addCouleurRobot(numJoueur,donnee);  
+        }
+      }
+        //printf("%s\n", rendered)
+     }
   }
-  /*//printf("%s", *data);
-  
-  */
+
 
   fclose(file);
   free(buffer);
 }
 
 int main(void) {
-
+  system("clear");
   printf("Bienvenue dans la version 1.0.0 du validateur de but de MM. EL MAHMOUDI et DYE \n");
   int err1 = 1;
   char confirm[5];
@@ -367,21 +382,13 @@ int main(void) {
   //getToBebotte
 
   recupJoueurs();
-	system("clear");
   parsage("curly.txt");
 
-/*	
-*/
-	//, n° etudiant %s, n° robot %s, couleur %s
-	//, listeJoueurs[i].rfidetud,listeJoueurs[i].idRobot,listeJoueurs[i].coulRobot
   int ingame = 1;
   char game[5];
   char rfid[20];
-	
-while(ingame==1) {
-	for (int j =0; j<NBRE_ROBOTS; j++) {
-		printf("Joueur n %i",  j);
-	}
+
+  while(ingame==1) {
     printf("Quelqu'un doit-il se connecter ? (oui/non) \n");
     fgets(game, 5, stdin );
     char *p3 = strchr(game,'\n');
@@ -394,10 +401,10 @@ while(ingame==1) {
       char *p4 = strchr(rfid,'\n');
       *p4='\0';
       
-    printf("Existence joueur : %i\n", choixJoueur(rfid) );
+    printf("Existence joueur : %i\n", existenceJoueur(rfid) );
 
       printf("Erreur ?\n");
-      if (choixJoueur(rfid) != -1) { // Si le joueur existe pour cette partie //
+      if (existenceJoueur(rfid) == 1) {// Si le joueur existe pour cette partie // PROBLEME ICI
 
         // COMMUNICATION SOCKET
         struct sockaddr_in sin;
@@ -409,6 +416,8 @@ while(ingame==1) {
         sock = socket(AF_INET, SOCK_STREAM, 0);
 
         /* Configuration de la connexion */ 
+        printf("%s\n",listeJoueurs[choixJoueur(rfid)].idRobot );
+
         sin.sin_addr.s_addr = inet_addr("127.0.0.1");//listeJoueurs[choixJoueur(rfid)].idRobot); //
         sin.sin_family = AF_INET;
         sin.sin_port = htons(PORT);
@@ -429,7 +438,7 @@ while(ingame==1) {
 
         //on stocke l'id du robot qui a marqué
         char mess4[40] ="data=";
-        strcat(mess4,listeJoueurs[choixJoueur(rfid)].idRobot);
+        strcat(mess4,tok);
 
         tok = strtok(NULL, "/");
         printf("IDBALLON = %s\n", tok);
@@ -440,10 +449,9 @@ while(ingame==1) {
           tok = strtok(NULL, "/");
           printf("COULROBOT = %s\n", tok);
           
-          if (strcmp(listeJoueurs[choixJoueur(rfid)].coulRobot, couleurEnnemie)==0) {
+          if (strcmp(tok, couleurEnnemie)==0) {
             //imaginons qu'on a envoyé les ids au distributeur de ballon. 
             // Premier cas : les ids correspondent
-
             for(;;) {
             // Envoi de donnees au serveur 
               char buffer[32] = "1";
@@ -474,7 +482,7 @@ while(ingame==1) {
             // !! TO DO : mettre ici le nom du "channel" ou on veut envoyer des donneees
             char *channel = "testVB";
             /* Par convention dans FAR on parle sur ressource "msg"
-            sur laquelle on envoie une chaine contenant les couples clef:valeur separes par des virgules */
+            sur laquelle on envoie une chaine contenant les couples clef:valeur separes par des 			virgules */
             char *ressource = "msg"; 
             // !! TO DO : mettre ci-dessous le token du canal !!
             // canal partie0 : 1494793564147_KNl54g97mG89kQSZ
@@ -504,7 +512,11 @@ while(ingame==1) {
 */
     else { 
       printf("Le Joueur n'existe pas pour cette partie.\n");
-      // On ne communique pas avec le robot du moment que le numéro étudiant n'est pas dans la partie.
+      char buffer[32] = "E";
+      //fgets(buffer, 32, stdin);
+      //char *pos = strchr(buffer, '\n');
+      //*pos = '\0';
+      send(sock, buffer, 32, 0);
     } 
   } // if we are always ingame
   
